@@ -8,12 +8,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tm.salam.gpstracker.dto.CoordinatesDTO;
 import tm.salam.gpstracker.models.GpsTracker;
 import tm.salam.gpstracker.service.CoordinatesService;
 import tm.salam.gpstracker.service.GpsTrackerService;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -66,8 +68,27 @@ public class CoordinateController {
             response.put("gps tracker don't found with by device id",false);
         }else{
 
-            response.put("status",true);
-            response.put("coordinates",coordinatesService.getCoordinatesDeviceByDate(date,deviceId));
+            List<CoordinatesDTO>coordinatesDTOS=coordinatesService.getCoordinatesDeviceByDate(date,deviceId);
+            if(!coordinatesDTOS.isEmpty()){
+
+                response.put("status",true);
+                response.put("coordinates",coordinatesDTOS);
+
+            }else{
+
+                coordinatesDTOS=coordinatesService.getCoordinateByNearestDate(date,deviceId);
+
+                if(!coordinatesDTOS.isEmpty()){
+
+                    response.put("status",true);
+                    response.put("message","coordinate by nearest date");
+                    response.put("coordinates",coordinatesDTOS);
+                }else{
+
+                    response.put("status",false);
+                    response.put("message","gps tracker don't send coordinates");
+                }
+            }
         }
 
         return ResponseEntity.ok(response);

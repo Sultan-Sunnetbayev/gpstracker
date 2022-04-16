@@ -1,6 +1,7 @@
 package tm.salam.gpstracker.service;
 
 import org.apache.tomcat.jni.Local;
+import org.checkerframework.checker.units.qual.min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,6 +14,7 @@ import tm.salam.gpstracker.models.GpsTracker;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class CoordinatesServiceImpl implements CoordinatesService{
@@ -30,81 +32,67 @@ public class CoordinatesServiceImpl implements CoordinatesService{
         this.gsmService = gsmService;
     }
 
-    @Scheduled(cron = "0 0/3 * * * *")
+    private String ReFormatText(int ind,String sms){
+
+        String result="";
+
+        while(ind<sms.length() && sms.charAt(ind)!=' '){
+            result+=sms.charAt(ind++);
+        }
+
+        return result;
+    }
+    @Scheduled(cron = "0 0/5 * * * *")
     @Override
     public void SendAndReadSms() throws InterruptedException {
 
         gsmService.initialize(gsmService.getSystemPorts()[1]);
 
-        ArrayList<String[]>sms=gsmService.readSms();
+        ArrayList<String[]> sms = gsmService.readSms();
+        boolean chk = false;
+        int ind=0;
+        String[] hlp = new String[3];
 
-        System.out.println(sms.size());
-        System.out.println();
-        for(int i=0;i<sms.size();i++){
-
-            for(int j=0;j<sms.get(i).length;j++){
-
-                System.out.println(sms.get(i)[j]);
-            }
-        }
         System.out.println("starting");
-        for (int i=0;i<sms.size();i++){
+        for (int i = 0; i < sms.size(); i++) {
 
 //            System.out.println(sms.get(i));
-            String[] temporal=sms.get(i);
-            if(temporal.length>7) {
-//                System.out.println(temporal[7]);
-                GpsTracker gpsTracker=gpsTrackerService.getGpsTrackerBySimcardNumber(temporal[3]);
-                if(gpsTracker!=null){
+            String[] temporal = sms.get(i);
+            for (int j = 0; j < temporal.length; j++) {
 
-                    String[] hlp = new String[3];
+                temporal[j] = temporal[j].toLowerCase();
+                System.out.println(temporal[j]);
 
-                    temporal[7]=temporal[7].toLowerCase();
-                    int ind=temporal[7].indexOf("lat");
-                    if(ind==-1){
+                if (!chk && temporal[j].contains("+993")) {
+                    chk = true;
+  //                  System.out.println("yes +993");
+                    ind=j;
+//                    System.out.println(temporal[ind]);
+                    continue;
+                }else {
+                    if (chk) {
 
-                        continue;
-                    }else{
-                        ind+=4;
-                        hlp[0]="";
-                        while (temporal[7].charAt(ind)!=' ') {
-                            hlp[0] += temporal[7].charAt(ind++);
+                        GpsTracker gpsTracker=gpsTrackerService.getGpsTrackerBySimcardNumber(temporal[ind]);
+                        if (gpsTracker!=null && temporal[j].contains("lat") && temporal[j].contains("long")) {
+
+                            chk = false;
+                            hlp[0] = this.ReFormatText(temporal[j].indexOf("lat") + 4, temporal[j]);
+                            hlp[1] = this.ReFormatText(temporal[j].indexOf("long") + 5, temporal[j]);
+                            hlp[2] = this.ReFormatText(temporal[j].indexOf("alt") + 4, temporal[j]);
+
+                            Coordinates coordinates = Coordinates.builder()
+                                    .lat(Double.parseDouble(hlp[0]))
+                                    .lon(Double.parseDouble(hlp[1]))
+                                    .alt(Double.parseDouble(hlp[2]))
+                                    .gpsTracker(gpsTracker)
+                                    .build();
+
+//                            System.out.println(coordinates);
+
+                            coordinatesRepository.save(coordinates);
+
                         }
                     }
-                    ind=temporal[7].indexOf("long");
-                    if(ind==-1){
-
-                        continue;
-                    }else{
-                        ind+=5;
-                        hlp[1]="";
-                        while (temporal[7].charAt(ind)!=' ') {
-                            hlp[1] += temporal[7].charAt(ind++);
-                        }
-                    }
-                    ind=temporal[7].indexOf("alt");
-                    if(ind==-1){
-
-                        continue;
-                    }else{
-                        ind+=4;
-                        hlp[2]="";
-                        while (temporal[7].charAt(ind)!=' ') {
-                            hlp[2] += temporal[7].charAt(ind++);
-                        }
-                    }
-//                    for(String s:hlp){
-//                        System.out.println(s);
-//                    }
-//                    System.out.println(gpsTracker);
-                    Coordinates coordinates=Coordinates.builder()
-                            .lat(Double.parseDouble(hlp[0]))
-                            .lon(Double.parseDouble(hlp[1]))
-                            .alt(Double.parseDouble(hlp[2]))
-                            .gpsTracker(gpsTracker)
-                            .build();
-
-                    coordinatesRepository.save(coordinates);
                 }
             }
         }
@@ -123,6 +111,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
         gsmService.closePort();
         System.out.println("ending");
+
     }
 
     @Override
@@ -142,7 +131,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
                 int hlp=date.compareTo(coordinatesList.get(i).getCreationDateTime());
 
-                if(hlp>0){
+                if(hlp<0){
                     date=(Date) coordinatesList.get(i).getCreationDateTime().clone();
                     ind=i;
                 }
@@ -177,5 +166,43 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
         return coordinatesDTOS;
     }
+
+    @Override
+    public List<CoordinatesDTO>getCoordinateByNearestDate(Date date, String deviceId){
+
+        List<Coordinates>coordinatesList=coordinatesRepository.findCoordinatesByGpsTracker_DeviceId(deviceId);
+
+        if(!coordinatesList.isEmpty()){
+
+            long help,min=Math.abs(date.getTime()-coordinatesList.get(0).getCreationDateTime().getTime());
+            int ind=0;
+
+            for (int i=1;i<coordinatesList.size();i++){
+
+                help=Math.abs(date.getTime()-coordinatesList.get(i).getCreationDateTime().getTime());
+                if(help<min){
+
+                    min=help;
+                    ind=i;
+                }
+            }
+            List<CoordinatesDTO>coordinatesDTOS=new ArrayList<>();
+
+            coordinatesDTOS.add(CoordinatesDTO.builder()
+                    .lat(coordinatesList.get(ind).getLat())
+                    .lon(coordinatesList.get(ind).getLon())
+                    .alt(coordinatesList.get(ind).getAlt())
+                    .name(coordinatesList.get(ind).getGpsTracker().getName())
+                    .build());
+
+            return coordinatesDTOS;
+        }else{
+
+            return null;
+        }
+
+    }
+
+
 
 }

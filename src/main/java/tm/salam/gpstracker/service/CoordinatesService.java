@@ -19,4 +19,6 @@ public interface CoordinatesService {
     CoordinatesDTO getCoordinateByDeviceId(String id);
 
     List<CoordinatesDTO> getCoordinatesDeviceByDate(Date date,String deviceID);
+
+    List<CoordinatesDTO>getCoordinateByNearestDate(Date date, String deviceId);
 }

@@ -46,4 +46,16 @@ public class Coordinates {
     @JoinColumn(name = "device_id")
     private GpsTracker gpsTracker;
 
+    @Override
+    public String toString() {
+        return "Coordinates{" +
+                "id=" + id +
+                ", lat=" + lat +
+                ", lon=" + lon +
+                ", alt=" + alt +
+                ", creationDate=" + creationDate +
+                ", creationTime=" + creationTime +
+                ", creationDateTime=" + creationDateTime +
+                '}';
+    }
 }
