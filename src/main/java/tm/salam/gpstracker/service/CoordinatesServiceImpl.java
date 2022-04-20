@@ -1,9 +1,6 @@
 package tm.salam.gpstracker.service;
 
-import org.apache.tomcat.jni.Local;
-import org.checkerframework.checker.units.qual.min;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tm.salam.gpstracker.dao.CoordinatesRepository;
@@ -42,7 +39,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
         return result;
     }
-    @Scheduled(cron = "0 0/5 * * * *")
+    @Scheduled(cron = "0 0/4 * * * *")
     @Override
     public void SendAndReadSms() throws InterruptedException {
 
