@@ -28,6 +28,8 @@ public class GpsTracker {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @Column(name = "name")
+    @NotEmpty(message = "device id is empty")
+    @NotBlank(message = "device id is mandatory")
     private String name;
     @Column(name = "simcard_number")
     @Pattern(regexp = "\\+\\d{11}",message = "simcard number is invalid")

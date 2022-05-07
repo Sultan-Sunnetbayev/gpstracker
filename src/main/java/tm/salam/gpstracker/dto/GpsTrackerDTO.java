@@ -11,8 +11,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GpsTrackerDTO {
 
+    private int id;
     private String name;
     private String simcardNumber;
     private String deviceId;
+    private String login;
+    private String password;
 
 }
