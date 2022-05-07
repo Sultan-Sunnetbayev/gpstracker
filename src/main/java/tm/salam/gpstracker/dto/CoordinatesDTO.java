@@ -15,6 +15,5 @@ public class CoordinatesDTO {
     private Double lon;
     private Double alt;
     private String name;
-    private String deviceId;
 
 }

@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import tm.salam.gpstracker.dto.CoordinatesDTO;
 import tm.salam.gpstracker.models.GpsTracker;
 import tm.salam.gpstracker.service.CoordinatesService;
@@ -29,7 +32,8 @@ public class CoordinateController {
         this.gpsTrackerService = gpsTrackerService;
     }
 
-    @GetMapping(path = "/gpstracker",
+    @GetMapping(path = "/getCoordinateByDeviceId",
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
     public ResponseEntity getCoordinateByDeviceId(@RequestParam("deviceId")String deviceId){
 
@@ -38,8 +42,7 @@ public class CoordinateController {
 
         if(gpsTracker==null){
 
-            response.put("status",false);
-            response.put("message","gps tracker not found");
+            response.put("gps tracker don't found with by device id",false);
 
         }else{
 
@@ -50,7 +53,7 @@ public class CoordinateController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping(path = "/gpstracker/date",
+    @GetMapping(path = "/getCoordinateDeviceByDate",
                 consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
                 produces = "application/json")
     public ResponseEntity getCoordinateDeviceByDate(@RequestParam("deviceId")String deviceId,

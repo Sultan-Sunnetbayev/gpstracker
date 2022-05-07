@@ -2,16 +2,13 @@ package tm.salam.gpstracker.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tm.salam.gpstracker.dto.GpsTrackerDTO;
 import tm.salam.gpstracker.helper.ResponseTransfer;
 import tm.salam.gpstracker.models.GpsTracker;
 import tm.salam.gpstracker.service.GpsTrackerService;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -31,81 +28,77 @@ public class GpsTrackerController {
         return gpsTrackerService.getAllGpsTrackerDTO();
     }
 
-    @GetMapping(path = "/{id}",produces = "application/json")
-    @ResponseBody
-    public ResponseEntity getGpsTrackerById(@PathVariable("id") String id){
+    @GetMapping(path = "/getGpsTrackerByParamater",
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+            produces = "application/json")
+    public GpsTrackerDTO ShowGpsTrackerByParameter(@RequestParam("parameter") String paramater){
 
-        Map<Object,Object> response=new HashMap<>();
-        GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOById(Integer.parseInt(id));
-        System.out.println(id);
+        GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOByDeviceId(paramater);
 
-        if(gpsTrackerDTO==null){
+        if(gpsTrackerDTO!=null){
 
-            response.put("status",false);
-            response.put("gps tracker not found",null);
-        }else{
+            return gpsTrackerDTO;
+        }
+        gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOBySimcardNumber(paramater);
+        if(gpsTrackerDTO!=null){
 
-            response.put("status",true);
-            response.put("gps tracker",gpsTrackerDTO);
+            return gpsTrackerDTO;
+        }
+        for(int i=0;i<paramater.length();i++){
+
+            if(!Character.isDigit(paramater.charAt(i))){
+
+                return null;
+            }
         }
 
-        return ResponseEntity.ok(response);
+        return gpsTrackerService.getGpsTrackerDTOById(Integer.parseInt(paramater));
     }
 
-    @PostMapping(path = "/add",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
-    public ResponseTransfer addGpsTracker(@ModelAttribute GpsTrackerDTO gpsTrackerDTO){
+    @PostMapping(path = "/addGpsTracker",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
+    public ResponseTransfer addGpsTracker(@ModelAttribute GpsTracker gpsTracker){
 
-        if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,5),"+9936")){
+        if(!Objects.equals(gpsTracker.getSimcardNumber().substring(0,5),"+9936")){
 
             return new ResponseTransfer("simcard number is invalid",false);
         }
 
-        return gpsTrackerService.addGpsTracker(gpsTrackerDTO);
+        return gpsTrackerService.addGpsTracker(gpsTracker);
     }
 
-    @PutMapping(path="/edit",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
-    public ResponseTransfer editGpsTracker(@RequestParam("id") int id,
-                                           @ModelAttribute GpsTrackerDTO gpsTrackerDTO){
+    @PostMapping(path="/editGpsTracker",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
+    public ResponseTransfer editGpsTracker(@RequestParam("parameter") String parameter,
+                                           @ModelAttribute GpsTracker gpsTracker){
 
-        ResponseTransfer responseTransfer;
+        if(!Objects.equals(gpsTracker.getSimcardNumber().substring(0,4),"+993")){
 
-        if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,4),"+993")){
-
-            responseTransfer=new ResponseTransfer("simcard number is invalid",false);
-        }
-        GpsTrackerDTO temporal=gpsTrackerService.getGpsTrackerDTOById(id);
-
-        if(temporal==null){
-
-            responseTransfer=new ResponseTransfer("gps tracker not found",false);
-        }else{
-
-            responseTransfer=gpsTrackerService.editGpsTrackerByDeviceId(temporal.getDeviceId(),gpsTrackerDTO);
+            return new ResponseTransfer("simcard number is invalid",false);
         }
 
-        return responseTransfer;
+        return gpsTrackerService.editGpsTrackerByParameter(parameter,gpsTracker);
     }
 
-    @DeleteMapping(path = "/remove",
+    @DeleteMapping(path = "/removeGpsTrackerById",
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
-    public ResponseTransfer deleteGpsTrackerById(@RequestParam("id") int id){
+    public ResponseTransfer deleteGpsTrackerById(int id){
 
         return gpsTrackerService.deleteGpsTrackerById(id);
     }
 
-//    @DeleteMapping(path = "/removeGpsTrackerByDeviceId",
-//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
-//            produces = "application/json")
-//    public ResponseTransfer deleteGpsTrackerByDeviceId(String deviceId){
-//
-//        return gpsTrackerService.deleteGpsTrackerByDeviceId(deviceId);
-//    }
-//
-//    @DeleteMapping(path = "/removeGpsTrackerBySimcardNumber",
-//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
-//            produces = "application/json")
-//    public ResponseTransfer deleteGpsTrackerBySimcardNumber(String simcardNumber){
-//
-//        return gpsTrackerService.deleteGpsTrackerBySimcardNumber(simcardNumber);
-//    }
+    @DeleteMapping(path = "/removeGpsTrackerByDeviceId",
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+            produces = "application/json")
+    public ResponseTransfer deleteGpsTrackerByDeviceId(String deviceId){
+
+        return gpsTrackerService.deleteGpsTrackerByDeviceId(deviceId);
+    }
+
+    @DeleteMapping(path = "/removeGpsTrackerBySimcardNumber",
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+            produces = "application/json")
+    public ResponseTransfer deleteGpsTrackerBySimcardNumber(String simcardNumber){
+
+        return gpsTrackerService.deleteGpsTrackerBySimcardNumber(simcardNumber);
+    }
 }

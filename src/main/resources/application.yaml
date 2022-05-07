@@ -1,18 +1,15 @@
 spring:
   main:
     allow-circular-references: true
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/gpstrackerdb
+    url: jdbc:postgresql://localhost:5432/gpstrackers
     username: postgres
     password: postgres
   flyway:
     baseline-on-migrate: true
 server:
   port: 8082
-#  address: 192.168.3.151

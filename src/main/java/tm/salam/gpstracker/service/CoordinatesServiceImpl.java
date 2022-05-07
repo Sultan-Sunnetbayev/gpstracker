@@ -5,7 +5,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tm.salam.gpstracker.dao.CoordinatesRepository;
 import tm.salam.gpstracker.dto.CoordinatesDTO;
-import tm.salam.gpstracker.dto.GpsTrackerDTO;
 import tm.salam.gpstracker.models.Coordinates;
 import tm.salam.gpstracker.models.GpsTracker;
 
@@ -40,7 +39,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
         return result;
     }
-    @Scheduled(cron = "0 0/5 * * * *")
+    @Scheduled(cron = "0 0/4 * * * *")
     @Override
     public void SendAndReadSms() throws InterruptedException {
 
@@ -95,11 +94,11 @@ public class CoordinatesServiceImpl implements CoordinatesService{
             }
         }
 
-        List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getAllGpsTrackerDTO();
+        List<GpsTracker>gpsTrackers=gpsTrackerService.getAllGpsTrackers();
 
-        for (GpsTrackerDTO gpsTrackerDTO:gpsTrackerDTOS){
+        for (GpsTracker gpsTracker:gpsTrackers){
 
-            gsmService.sendSms(gpsTrackerDTO.getSimcardNumber(),gpsTrackerDTO.getLogin()+" "+gpsTrackerDTO.getPassword()+" getgps");
+            gsmService.sendSms(gpsTracker.getSimcardNumber(),gpsTracker.getLogin()+" "+gpsTracker.getPassword()+" getgps");
             Thread.sleep(2000);
 
         }
@@ -141,7 +140,6 @@ public class CoordinatesServiceImpl implements CoordinatesService{
                     .lon(coordinatesList.get(ind).getLon())
                     .alt(coordinatesList.get(ind).getAlt())
                     .name(coordinatesList.get(ind).getGpsTracker().getName())
-                    .deviceId(coordinatesList.get(ind).getGpsTracker().getDeviceId())
                     .build();
         }
     }
@@ -201,5 +199,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
         }
 
     }
+
+
 
 }
