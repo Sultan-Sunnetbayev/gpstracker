@@ -13,10 +13,7 @@ import tm.salam.gpstracker.models.GpsTracker;
 import tm.salam.gpstracker.service.CoordinatesService;
 import tm.salam.gpstracker.service.GpsTrackerService;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/coordinate")
@@ -32,7 +29,7 @@ public class CoordinateController {
         this.gpsTrackerService = gpsTrackerService;
     }
 
-    @GetMapping(path = "/getCoordinateByDeviceId",
+    @GetMapping(path = "/deviceId",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
     public ResponseEntity getCoordinateByDeviceId(@RequestParam("deviceId")String deviceId){
@@ -52,14 +49,32 @@ public class CoordinateController {
 
         return ResponseEntity.ok(response);
     }
+    @GetMapping(path = "/all/gpstrackers",
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+            produces = "application/json")
+    public ResponseEntity getCoordinateAllGpsTracker(){
 
-    @GetMapping(path = "/getCoordinateDeviceByDate",
+        Map<Object,Object>response=new HashMap<>();
+        List<GpsTracker>gpsTrackers=gpsTrackerService.getAllGpsTrackers();
+        List<CoordinatesDTO>coordinatesDTOS=new ArrayList<>();
+        for(GpsTracker gpsTracker:gpsTrackers){
+
+            coordinatesDTOS.add(coordinatesService.getCoordinateByDeviceId(gpsTracker.getDeviceId()));
+
+        }
+
+        response.put("status",true);
+        response.put("coordinate gpstrackers",coordinatesDTOS);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(path = "/deviceId/date",
                 consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
                 produces = "application/json")
     public ResponseEntity getCoordinateDeviceByDate(@RequestParam("deviceId")String deviceId,
                                                           @RequestParam("date")@DateTimeFormat(pattern = "yyyy-MM-dd") Date date){
 
-//        System.out.println(date);
         Map<Object,Object>response=new HashMap<>();
         GpsTracker gpsTracker=gpsTrackerService.getGpsTrackerByDeviceId(deviceId);
 

@@ -6,7 +6,7 @@ spring:
       ddl-auto: update
     show-sql: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/gpstrackers
+    url: jdbc:postgresql://localhost:5432/gpstrackerdb
     username: postgres
     password: postgres
   flyway:

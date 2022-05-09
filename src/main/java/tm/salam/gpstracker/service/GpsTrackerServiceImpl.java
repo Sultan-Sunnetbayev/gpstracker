@@ -38,6 +38,7 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
     private  GpsTrackerDTO toDTO(GpsTracker gpsTracker) {
         
         return GpsTrackerDTO.builder()
+                .id(gpsTracker.getId())
                 .name(gpsTracker.getName())
                 .simcardNumber(gpsTracker.getSimcardNumber())
                 .deviceId(gpsTracker.getDeviceId())
@@ -132,69 +133,76 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
 
     @Override
     @Transactional
-    public ResponseTransfer addGpsTracker(GpsTracker gpsTracker){
+    public ResponseTransfer editGpsTrackerById(int id, GpsTrackerDTO gpsTrackerDTO){
 
-        GpsTracker temporal=gpsTrackerRepository.findGpsTrackerByDeviceId(gpsTracker.getDeviceId());
+        GpsTracker gpsTracker=gpsTrackerRepository.findGpsTrackerById(id);
+
+        ResponseTransfer responseTransfer;
+
+        if(gpsTracker!=null){
+
+            GpsTracker temporal=gpsTrackerRepository.findGpsTrackerByDeviceId(gpsTracker.getDeviceId());
+
+            if(temporal!=null) {
+                if (temporal.getId() != gpsTracker.getId()) {
+
+                    return new ResponseTransfer("deviceId new gps tracker already added", false);
+                }
+            }
+            temporal=gpsTrackerRepository.findGpsTrackerBySimcardNumber(gpsTrackerDTO.getSimcardNumber());
+
+            if(temporal!=null){
+                if(temporal.getId()!=gpsTracker.getId()){
+
+                    return new ResponseTransfer("simcard number new gps tracker already added",false);
+                }
+            }
+
+            gpsTracker.setName(gpsTrackerDTO.getName());
+            gpsTracker.setDeviceId(gpsTrackerDTO.getDeviceId());
+            gpsTracker.setSimcardNumber(gpsTrackerDTO.getSimcardNumber());
+            gpsTracker.setLogin(gpsTrackerDTO.getLogin());
+            gpsTracker.setPassword(gpsTrackerDTO.getPassword());
+            responseTransfer=new ResponseTransfer("gpstracker successfull edited",true);
+
+        }else{
+
+            responseTransfer=new ResponseTransfer("gps tracker don't found",false);
+        }
+
+        return responseTransfer;
+    }
+
+    @Override
+    @Transactional
+    public ResponseTransfer addGpsTracker(GpsTrackerDTO gpsTrackerDTO){
+
+        GpsTracker temporal=gpsTrackerRepository.findGpsTrackerByDeviceId(gpsTrackerDTO.getDeviceId());
 
         if(temporal!=null){
 
             return new ResponseTransfer("this gps tracker's deviceId already added", false);
         }
-        temporal=gpsTrackerRepository.findGpsTrackerBySimcardNumber(gpsTracker.getSimcardNumber());
+        temporal=gpsTrackerRepository.findGpsTrackerBySimcardNumber(gpsTrackerDTO.getSimcardNumber());
+
         if(temporal!=null){
 
             return new ResponseTransfer("this gps tracker's simcard number already added",false);
         }
 
-        gpsTrackerRepository.save(gpsTracker);
+        GpsTracker saveGpsTracker= GpsTracker.builder()
+                .name(gpsTrackerDTO.getName())
+                .deviceId(gpsTrackerDTO.getDeviceId())
+                .simcardNumber(gpsTrackerDTO.getSimcardNumber())
+                .login(gpsTrackerDTO.getLogin())
+                .password(gpsTrackerDTO.getPassword())
+                .build();
+
+        gpsTrackerRepository.save(saveGpsTracker);
 
         return new ResponseTransfer("gps tracker successfull added",true);
     }
 
-    @Override
-    @Transactional
-    public ResponseTransfer editGpsTrackerByParameter(String parameter, GpsTracker gpsTracker){
-
-        GpsTracker temporal=gpsTrackerRepository.findGpsTrackerBySimcardNumber(parameter);
-
-        if(temporal!=null){
-
-            if(gpsTracker.getDeviceId()!=temporal.getDeviceId()){
-                if(gpsTrackerRepository.findGpsTrackerByDeviceId(gpsTracker.getDeviceId())!=null){
-
-                    return new ResponseTransfer("gps tracker's device id already added",false);
-                }
-            }
-            if(gpsTracker.getSimcardNumber()!=temporal.getSimcardNumber()){
-                if(gpsTrackerRepository.findGpsTrackerBySimcardNumber(gpsTracker.getSimcardNumber())!=null){
-
-                    return new ResponseTransfer("gps tracker's simcard number already added",false);
-                }
-            }
-            temporal.setName(gpsTracker.getName());
-            temporal.setDeviceId(gpsTracker.getDeviceId());
-            temporal.setSimcardNumber(gpsTracker.getSimcardNumber());
-            temporal.setLogin(gpsTracker.getLogin());
-            temporal.setPassword(gpsTracker.getPassword());
-            gpsTrackerRepository.save(temporal);
-
-            return new ResponseTransfer("gps tracker successfull edited",true);
-        }
-        temporal=gpsTrackerRepository.findGpsTrackerByDeviceId(parameter);
-        if(temporal!=null){
-
-            temporal.setName(gpsTracker.getName());
-            temporal.setDeviceId(gpsTracker.getDeviceId());
-            temporal.setSimcardNumber(gpsTracker.getSimcardNumber());
-            temporal.setLogin(gpsTracker.getLogin());
-            temporal.setPassword(gpsTracker.getPassword());
-//            gpsTrackerRepository.save(gpsTracker);
-
-            return new ResponseTransfer("gps tracker successfull edited",true);
-        }
-
-        return new ResponseTransfer("gps tracker don't found with by parameter",false);
-    }
 
     @Override
     @Transactional

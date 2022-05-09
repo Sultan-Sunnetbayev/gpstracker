@@ -30,10 +30,10 @@ public interface GpsTrackerService {
     GpsTrackerDTO getGpsTrackerDTOById(int id);
 
     @Transactional
-    ResponseTransfer addGpsTracker(GpsTracker gpsTracker);
+    ResponseTransfer editGpsTrackerById(int id, GpsTrackerDTO gpsTrackerDTO);
 
     @Transactional
-    ResponseTransfer editGpsTrackerByParameter(String parameter, GpsTracker gpsTracker);
+    ResponseTransfer addGpsTracker(GpsTrackerDTO gpsTrackerDTO);
 
     @Transactional
     ResponseTransfer deleteGpsTrackerById(int id);

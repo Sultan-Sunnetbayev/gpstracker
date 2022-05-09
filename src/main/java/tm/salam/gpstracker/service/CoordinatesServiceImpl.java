@@ -39,7 +39,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
         return result;
     }
-    @Scheduled(cron = "0 0/4 * * * *")
+    @Scheduled(cron = "0 0/5 * * * *")
     @Override
     public void SendAndReadSms() throws InterruptedException {
 
