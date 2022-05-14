@@ -50,7 +50,7 @@ public class CoordinateController {
         return ResponseEntity.ok(response);
     }
     @GetMapping(path = "/all/gpstrackers",
-            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
     public ResponseEntity getCoordinateAllGpsTracker(){
 
