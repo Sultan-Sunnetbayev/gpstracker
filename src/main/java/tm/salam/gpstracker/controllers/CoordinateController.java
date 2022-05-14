@@ -91,13 +91,13 @@ public class CoordinateController {
 
             }else{
 
-                coordinatesDTOS=coordinatesService.getCoordinateByNearestDate(date,deviceId);
+                CoordinatesDTO coordinatesDTO=coordinatesService.getCoordinateByNearestDate(date,deviceId);
 
-                if(!coordinatesDTOS.isEmpty()){
+                if(coordinatesDTO!=null){
 
                     response.put("status",true);
-                    response.put("message","coordinate by nearest date");
-                    response.put("coordinates",coordinatesDTOS);
+                    response.put("message","latest coordinate gps tracker");
+                    response.put("coordinates",coordinatesDTO);
                 }else{
 
                     response.put("status",false);

@@ -165,7 +165,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
     }
 
     @Override
-    public List<CoordinatesDTO>getCoordinateByNearestDate(Date date, String deviceId){
+    public CoordinatesDTO getCoordinateByNearestDate(Date date, String deviceId){
 
         List<Coordinates>coordinatesList=coordinatesRepository.findCoordinatesByGpsTracker_DeviceId(deviceId);
 
@@ -183,23 +183,22 @@ public class CoordinatesServiceImpl implements CoordinatesService{
                     ind=i;
                 }
             }
-            List<CoordinatesDTO>coordinatesDTOS=new ArrayList<>();
 
-            coordinatesDTOS.add(CoordinatesDTO.builder()
+            CoordinatesDTO coordinatesDTO=CoordinatesDTO.builder()
                     .lat(coordinatesList.get(ind).getLat())
                     .lon(coordinatesList.get(ind).getLon())
                     .alt(coordinatesList.get(ind).getAlt())
                     .name(coordinatesList.get(ind).getGpsTracker().getName())
-                    .build());
+                    .date(coordinatesList.get(ind).getCreationDate())
+                    .time(coordinatesList.get(ind).getCreationTime())
+                    .build();
 
-            return coordinatesDTOS;
+            return coordinatesDTO;
         }else{
 
             return null;
         }
 
     }
-
-
 
 }

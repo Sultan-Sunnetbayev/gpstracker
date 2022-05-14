@@ -20,5 +20,5 @@ public interface CoordinatesService {
 
     List<CoordinatesDTO> getCoordinatesDeviceByDate(Date date,String deviceID);
 
-    List<CoordinatesDTO>getCoordinateByNearestDate(Date date, String deviceId);
+    CoordinatesDTO getCoordinateByNearestDate(Date date, String deviceId);
 }
