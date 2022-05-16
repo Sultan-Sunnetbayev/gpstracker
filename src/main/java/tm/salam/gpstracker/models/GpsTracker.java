@@ -28,6 +28,8 @@ public class GpsTracker {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @Column(name = "name")
+    @NotBlank(message = "device name is mandatory")
+    @NotEmpty(message = "device name is empty")
     private String name;
     @Column(name = "simcard_number")
     @Pattern(regexp = "\\+\\d{11}",message = "simcard number is invalid")
@@ -42,8 +44,8 @@ public class GpsTracker {
     @Size(min = 3, max= 10, message = "length login should be greater than 2 and less than 11")
     private String login;
     @Column(name = "password")
-    @NotBlank(message = "login is mandatory")
-    @NotEmpty(message = "login is empty")
+    @NotBlank(message = "password is mandatory")
+    @NotEmpty(message = "password is empty")
     @Size(min = 3, max= 15, message = "length password should be greater than 2 and less than 16")
     private String password;
     @Column(name = "created")
