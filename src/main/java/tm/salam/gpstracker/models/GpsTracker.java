@@ -12,7 +12,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,8 +34,8 @@ public class GpsTracker {
     @Pattern(regexp = "\\+\\d{11}",message = "simcard number is invalid")
     private String simcardNumber;
     @Column(name = "device_id")
-    @NotBlank(message = "device id is mandatory")
-    @NotEmpty(message = "device id is empty")
+    @NotBlank(message = "deviceId is mandatory")
+    @NotEmpty(message = "deviceId is empty")
     private String deviceId;
     @Column(name = "login")
     @NotBlank(message = "login is mandatory")
@@ -51,21 +50,12 @@ public class GpsTracker {
     @Column(name = "created")
     @CreationTimestamp
     private LocalDateTime created;
+    @Column(name = "updated")
     @UpdateTimestamp
     private LocalDateTime updated;
+    @Column(name = "order_card")
+    private String orderCard;
     @OneToMany(mappedBy = "gpsTracker",cascade = CascadeType.ALL)
-    private List<Coordinates> coordinatesList;
+    private List<Coordinate> coordinates;
 
-    @Override
-    public String toString() {
-        return "GpsTracker{" +
-                "id=" + id +
-                ", modelName='" + name + '\'' +
-                ", simcardNumber='" + simcardNumber + '\'' +
-                ", deviceId='" + deviceId + '\'' +
-                ", created=" + created +
-                ", updated=" + updated +
-//                ", coordinatesList=" + coordinatesList +
-                '}';
-    }
 }

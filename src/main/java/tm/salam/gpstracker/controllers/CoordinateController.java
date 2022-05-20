@@ -4,12 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import tm.salam.gpstracker.dto.CoordinatesDTO;
-import tm.salam.gpstracker.models.GpsTracker;
+import org.springframework.web.bind.annotation.*;
+import tm.salam.gpstracker.dto.CoordinateDTO;
+import tm.salam.gpstracker.dto.GpsTrackerDTO;
 import tm.salam.gpstracker.service.CoordinatesService;
 import tm.salam.gpstracker.service.GpsTrackerService;
 
@@ -29,80 +26,120 @@ public class CoordinateController {
         this.gpsTrackerService = gpsTrackerService;
     }
 
-    @GetMapping(path = "/deviceId",
+    @GetMapping(path = "/orderCard/gpstracker",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
-    public ResponseEntity getCoordinateByDeviceId(@RequestParam("deviceId")String deviceId){
+    public @ResponseBody ResponseEntity getCoordinateByDeviceId(@RequestParam(value = "orderCard",required = true)String orderCard,
+                                                  @RequestParam(value = "begin",required = false)
+                                                      @DateTimeFormat(pattern = "yyyy-MM-dd") Date begin,
+                                                  @RequestParam(value = "end",required = false)
+                                                      @DateTimeFormat(pattern = "yyyy-MM-dd") Date end){
+        List<Object>response=new ArrayList<>();
+        Map<Object,Object>temporal=new HashMap<>();
+        CoordinateDTO coordinateDTO=null;
+        GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard);
 
-        Map<Object,Object>response=new HashMap<>();
-        GpsTracker gpsTracker=gpsTrackerService.getGpsTrackerByDeviceId(deviceId);
+        if(gpsTrackerDTO==null){
 
-        if(gpsTracker==null){
+            temporal.put("message","gps tracker not found with orderCard");
+            temporal.put("status",false);
+            response.add(temporal);
+        }else {
+            if (begin == null && end == null) {
 
-            response.put("gps tracker don't found with by device id",false);
+                coordinateDTO = coordinatesService.getCoordinateByOrderCard(orderCard);
 
-        }else{
+            } else if (begin != null && end != null) {
 
-            response.put("status",true);
-            response.put("coordinate",coordinatesService.getCoordinateByDeviceId(deviceId));
+                coordinateDTO = coordinatesService.getCoordinateByOrderCardAndBetweenDates(orderCard, begin, end);
+            }
+
+            if (coordinateDTO == null) {
+
+                temporal.put("message", "gps tracker don't send coordinate");
+                temporal.put("id", gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getId());
+                temporal.put("status", false);
+                response.add(temporal);
+            } else {
+
+                temporal.put("status", true);
+                response.add(coordinateDTO);
+                response.add(temporal);
+            }
         }
 
         return ResponseEntity.ok(response);
     }
-    @GetMapping(path = "/all/gpstrackers",
-//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = "application/json")
-    public ResponseEntity getCoordinateAllGpsTracker(){
 
-        Map<Object,Object>response=new HashMap<>();
-        List<GpsTracker>gpsTrackers=gpsTrackerService.getAllGpsTrackers();
-        List<CoordinatesDTO>coordinatesDTOS=new ArrayList<>();
-        for(GpsTracker gpsTracker:gpsTrackers){
+    @PostMapping(path = "/all/gpstrackers",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
+    public @ResponseBody ResponseEntity getCoordinateAllGpsTracker(@RequestParam(value = "begin",required = false)
+                                                                               @DateTimeFormat(pattern = "yyyy-MM-dd") Date begin,
+                                                     @RequestParam(value = "end",required = false)
+                                                                               @DateTimeFormat(pattern = "yyyy-MM-dd") Date end){
 
-            coordinatesDTOS.add(coordinatesService.getCoordinateByDeviceId(gpsTracker.getDeviceId()));
+        List<Object>response=new ArrayList<>();
+        List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getOccupiedGpsTrackerDTOS();
+        for(GpsTrackerDTO gpsTrackerDTO:gpsTrackerDTOS){
 
+            CoordinateDTO coordinateDTO=null;
+            Map<Object,Object>temporal=new HashMap<>();
+
+            if(begin==null && end==null){
+
+                coordinateDTO=coordinatesService.getCoordinateByOrderCard(gpsTrackerDTO.getOrderCard());
+
+                if(coordinateDTO==null){
+                    temporal.put("message","gps tracker don't send coordinate");
+                    temporal.put("id",gpsTrackerDTO.getId());
+                    temporal.put("status",false);
+                    response.add(temporal);
+                }else{
+                    temporal.put("status",true);
+                    response.add(coordinateDTO);
+                }
+            }else if(begin!=null && end!=null){
+
+                coordinateDTO=coordinatesService.getCoordinateByOrderCardAndBetweenDates(gpsTrackerDTO.getOrderCard(),begin,end);
+                if(coordinateDTO==null){
+                    temporal.put("message","gps tracker don't send coordinate between dates");
+                    temporal.put("id",gpsTrackerDTO.getId());
+                    temporal.put("status",false);
+                    response.add(temporal);
+                }else{
+                    temporal.put("status",true);
+                    response.add(coordinateDTO);
+                }
+            }
         }
-
-        response.put("status",true);
-        response.put("coordinate gpstrackers",coordinatesDTOS);
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping(path = "/deviceId/date",
+    @GetMapping(path = "/orderCard/date",
                 consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
                 produces = "application/json")
-    public ResponseEntity getCoordinateDeviceByDate(@RequestParam("deviceId")String deviceId,
-                                                          @RequestParam("date")@DateTimeFormat(pattern = "yyyy-MM-dd") Date date){
+    public ResponseEntity getCoordinateDeviceByDate(@RequestParam(value = "orderCard",required = true)String orderCard,
+                                                    @RequestParam("date")@DateTimeFormat(pattern = "yyyy-MM-dd") Date date){
 
         Map<Object,Object>response=new HashMap<>();
-        GpsTracker gpsTracker=gpsTrackerService.getGpsTrackerByDeviceId(deviceId);
+        GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard);
 
-        if(gpsTracker==null){
+        if(gpsTrackerDTO==null){
 
-            response.put("gps tracker don't found with by device id",false);
+            response.put("gps tracker don't found with by orderCard",false);
         }else{
 
-            List<CoordinatesDTO>coordinatesDTOS=coordinatesService.getCoordinatesDeviceByDate(date,deviceId);
-            if(!coordinatesDTOS.isEmpty()){
+            CoordinateDTO coordinatesDTO=coordinatesService.getCoordinatesDeviceByOrderCardAndDate(orderCard,date);
+            if(coordinatesDTO!=null){
 
                 response.put("status",true);
-                response.put("coordinates",coordinatesDTOS);
+                response.put("coordinates",coordinatesDTO);
 
             }else{
 
-                CoordinatesDTO coordinatesDTO=coordinatesService.getCoordinateByNearestDate(date,deviceId);
-
-                if(coordinatesDTO!=null){
-
-                    response.put("status",true);
-                    response.put("message","latest coordinate gps tracker");
-                    response.put("coordinates",coordinatesDTO);
-                }else{
-
-                    response.put("status",false);
-                    response.put("message","gps tracker don't send coordinates");
-                }
+                response.put("status",false);
+                response.put("message","Not found coordinate gps tracker this date");
+                response.put("id",gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getId());
             }
         }
 

@@ -40,4 +40,18 @@ public interface GpsTrackerService {
 
     @Transactional
     ResponseTransfer deleteGpsTrackerBySimcardNumber(String simcardNumber);
+
+    List<GpsTracker> getOccupiedGpsTrackers();
+
+    List<GpsTrackerDTO> getOccupiedGpsTrackerDTOS();
+
+    List<GpsTrackerDTO> getLooseGpsTrackerDTOS();
+
+    GpsTrackerDTO getGpsTrackerDTOByOrderCard(String orderCard);
+
+    @Transactional
+    ResponseTransfer setOrderGpsTracker(int id, String orderCard);
+
+    @Transactional
+    ResponseTransfer trushOrderFromGpsTracker(int id);
 }

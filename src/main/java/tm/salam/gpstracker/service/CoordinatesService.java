@@ -2,13 +2,11 @@ package tm.salam.gpstracker.service;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
-import tm.salam.gpstracker.dto.CoordinatesDTO;
+import tm.salam.gpstracker.dto.CoordinateDTO;
 
 import java.util.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface CoordinatesService {
 
@@ -16,9 +14,11 @@ public interface CoordinatesService {
     @Async
     void SendAndReadSms() throws InterruptedException;
 
-    CoordinatesDTO getCoordinateByDeviceId(String id);
+    CoordinateDTO getCoordinateByOrderCard(String orderCard);
 
-    List<CoordinatesDTO> getCoordinatesDeviceByDate(Date date,String deviceID);
+    CoordinateDTO getCoordinateByOrderCardAndBetweenDates(String deviceId, Date begin, Date end);
 
-    CoordinatesDTO getCoordinateByNearestDate(Date date, String deviceId);
+    CoordinateDTO getCoordinatesDeviceByOrderCardAndDate(String orderCard, Date date);
+
+
 }

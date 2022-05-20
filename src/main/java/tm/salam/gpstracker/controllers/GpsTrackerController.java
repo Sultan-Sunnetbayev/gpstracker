@@ -10,10 +10,7 @@ import tm.salam.gpstracker.models.GpsTracker;
 import tm.salam.gpstracker.service.GpsTrackerService;
 
 import javax.websocket.server.PathParam;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/gpstracker")
@@ -37,10 +34,9 @@ public class GpsTrackerController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping(path = "/{id}",produces = "application/json")
-    public ResponseEntity getGpsTrackerById(@PathVariable("id") int id){
+    @GetMapping(path = "/id",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
+    public ResponseEntity getGpsTrackerById(@RequestParam("id") int id){
 
-        System.out.println(id);
         GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOById(id);
         Map<Object,Object>response=new HashMap<>();
 
@@ -56,10 +52,10 @@ public class GpsTrackerController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(path = "/add/gpstracker",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
+    @PostMapping(path = "/add",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
     public ResponseTransfer addGpsTracker(@ModelAttribute GpsTrackerDTO gpsTrackerDTO){
 
-        if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,5),"+9936")){
+        if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,4),"+993")){
 
             return new ResponseTransfer("simcard number is invalid",false);
         }
@@ -67,8 +63,8 @@ public class GpsTrackerController {
         return gpsTrackerService.addGpsTracker(gpsTrackerDTO);
     }
 
-    @PutMapping(path="/edit/{id}",produces = "application/json")
-    public ResponseTransfer editGpsTrackerById(@PathVariable("id") int id,
+    @PutMapping(path="/id/edit",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
+    public ResponseTransfer editGpsTrackerById(@RequestParam("id") int id,
                                            @ModelAttribute GpsTrackerDTO gpsTrackerDTO){
 
         if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,4),"+993")){
@@ -82,24 +78,82 @@ public class GpsTrackerController {
     @DeleteMapping(path = "/remove",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
-    public ResponseTransfer deleteGpsTrackerById(int id){
+    public ResponseTransfer deleteGpsTrackerById(@RequestParam("id") int id){
 
         return gpsTrackerService.deleteGpsTrackerById(id);
     }
 
-//    @DeleteMapping(path = "/removeGpsTrackerByDeviceId",
-//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
-//            produces = "application/json")
-//    public ResponseTransfer deleteGpsTrackerByDeviceId(String deviceId){
-//
-//        return gpsTrackerService.deleteGpsTrackerByDeviceId(deviceId);
-//    }
-//
-//    @DeleteMapping(path = "/removeGpsTrackerBySimcardNumber",
-//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
-//            produces = "application/json")
-//    public ResponseTransfer deleteGpsTrackerBySimcardNumber(String simcardNumber){
-//
-//        return gpsTrackerService.deleteGpsTrackerBySimcardNumber(simcardNumber);
-//    }
+    @GetMapping(path = "/occupied",produces = "application/json")
+    public ResponseEntity getOccupiedGpsTrackers(){
+
+        List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getOccupiedGpsTrackerDTOS();
+        List<Object>response=new ArrayList<>();
+        Map<Object,Object>temporal=new HashMap<>();
+
+        if(gpsTrackerDTOS.isEmpty()){
+
+            temporal.put("message","all gps trackers loose");
+            temporal.put("status",false);
+        }else{
+
+            response.add(gpsTrackerDTOS);
+            temporal.put("status",true);
+        }
+        response.add(temporal);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(path = "/loose",produces = "application/json")
+    public ResponseEntity getLooseGpsTrackers(){
+
+        List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getLooseGpsTrackerDTOS();
+        List<Object>response=new ArrayList<>();
+        Map<Object,Object>temporal=new HashMap<>();
+
+        if(gpsTrackerDTOS.isEmpty()){
+
+            temporal.put("message","all gps trackers occupied");
+            temporal.put("status",false);
+
+        }else{
+
+            response.add(gpsTrackerDTOS);
+            temporal.put("status",true);
+        }
+        response.add(temporal);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(path = "/orderCard",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
+    public ResponseEntity getGpsTrackerByOrderCard(@RequestParam("orderCard")String orderCard){
+
+        GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard);
+        Map<Object,Object>response=new HashMap<>();
+
+        if(gpsTrackerDTO==null){
+
+            response.put("message","this order card don't seted");
+            response.put("status",false);
+        }else{
+
+            response.put("gpstracker",gpsTrackerDTO);
+            response.put("status",true);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping(path = "/set/order",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
+    public ResponseTransfer setOrderToGpsTracker(@RequestParam("id")int id,@RequestParam("orderCard")String orderCard){
+
+        return gpsTrackerService.setOrderGpsTracker(id,orderCard);
+    }
+
+    @PutMapping(path = "/trush/order",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
+    public ResponseTransfer trushOrderFromGpsTracker(@RequestParam("id")int id){
+
+        return gpsTrackerService.trushOrderFromGpsTracker(id);
+    }
 }

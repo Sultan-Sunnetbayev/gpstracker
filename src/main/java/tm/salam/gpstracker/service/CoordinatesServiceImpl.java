@@ -1,28 +1,27 @@
 package tm.salam.gpstracker.service;
 
+import javafx.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import tm.salam.gpstracker.dao.CoordinatesRepository;
-import tm.salam.gpstracker.dto.CoordinatesDTO;
-import tm.salam.gpstracker.models.Coordinates;
+import tm.salam.gpstracker.dao.CoordinateRepository;
+import tm.salam.gpstracker.dto.CoordinateDTO;
+import tm.salam.gpstracker.models.Coordinate;
 import tm.salam.gpstracker.models.GpsTracker;
 
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class CoordinatesServiceImpl implements CoordinatesService{
 
     private final GpsTrackerService gpsTrackerService;
-    private final CoordinatesRepository coordinatesRepository;
+    private final CoordinateRepository coordinatesRepository;
     private final GsmService gsmService;
+    private final double earthRadius=6378137;
 
     @Autowired
     public CoordinatesServiceImpl(GpsTrackerService gpsTrackerService,
-                                  CoordinatesRepository coordinatesRepository,
+                                  CoordinateRepository coordinatesRepository,
                                   GsmService gsmService) {
         this.gpsTrackerService = gpsTrackerService;
         this.coordinatesRepository = coordinatesRepository;
@@ -53,7 +52,6 @@ public class CoordinatesServiceImpl implements CoordinatesService{
         System.out.println("starting");
         for (int i = 0; i < sms.size(); i++) {
 
-//            System.out.println(sms.get(i));
             String[] temporal = sms.get(i);
             for (int j = 0; j < temporal.length; j++) {
 
@@ -62,9 +60,7 @@ public class CoordinatesServiceImpl implements CoordinatesService{
 
                 if (!chk && temporal[j].contains("+993")) {
                     chk = true;
-  //                  System.out.println("yes +993");
                     ind=j;
-//                    System.out.println(temporal[ind]);
                     continue;
                 }else {
                     if (chk) {
@@ -77,16 +73,17 @@ public class CoordinatesServiceImpl implements CoordinatesService{
                             hlp[1] = this.ReFormatText(temporal[j].indexOf("long") + 5, temporal[j]);
                             hlp[2] = this.ReFormatText(temporal[j].indexOf("alt") + 4, temporal[j]);
 
-                            Coordinates coordinates = Coordinates.builder()
-                                    .lat(Double.parseDouble(hlp[0]))
-                                    .lon(Double.parseDouble(hlp[1]))
-                                    .alt(Double.parseDouble(hlp[2]))
-                                    .gpsTracker(gpsTracker)
-                                    .build();
+                            if(gpsTracker.getOrderCard()!=null) {
+                                Coordinate coordinates = Coordinate.builder()
+                                        .lat(Double.parseDouble(hlp[0]))
+                                        .lon(Double.parseDouble(hlp[1]))
+                                        .alt(Double.parseDouble(hlp[2]))
+                                        .orderCard(gpsTracker.getOrderCard())
+                                        .gpsTracker(gpsTracker)
+                                        .build();
 
-//                            System.out.println(coordinates);
-
-                            coordinatesRepository.save(coordinates);
+                                coordinatesRepository.save(coordinates);
+                            }
 
                         }
                     }
@@ -94,10 +91,11 @@ public class CoordinatesServiceImpl implements CoordinatesService{
             }
         }
 
-        List<GpsTracker>gpsTrackers=gpsTrackerService.getAllGpsTrackers();
+        List<GpsTracker>gpsTrackers=gpsTrackerService.getOccupiedGpsTrackers();
 
         for (GpsTracker gpsTracker:gpsTrackers){
 
+            System.out.println(gpsTracker.getSimcardNumber());
             gsmService.sendSms(gpsTracker.getSimcardNumber(),gpsTracker.getLogin()+" "+gpsTracker.getPassword()+" getgps");
             Thread.sleep(2000);
 
@@ -112,93 +110,111 @@ public class CoordinatesServiceImpl implements CoordinatesService{
     }
 
     @Override
-    public CoordinatesDTO getCoordinateByDeviceId(String deviceId){
+    public CoordinateDTO getCoordinateByOrderCard(String orderCard){
 
-        List<Coordinates> coordinatesList=coordinatesRepository.findCoordinatesByGpsTracker_DeviceId(deviceId);
+        List<Coordinate>coordinates=coordinatesRepository.findCoordinatesByOrderCard(orderCard);
 
-        if(coordinatesList.isEmpty()){
+        if(coordinates.isEmpty()){
 
             return null;
         }else{
 
-            Date date=coordinatesList.get(0).getCreationDateTime();
-            int ind=0;
-
-            for(int i=1;i<coordinatesList.size();i++){
-
-                int hlp=date.compareTo(coordinatesList.get(i).getCreationDateTime());
-
-                if(hlp<0){
-                    date=(Date) coordinatesList.get(i).getCreationDateTime().clone();
-                    ind=i;
-                }
-            }
-
-
-            return CoordinatesDTO.builder()
-                    .lat(coordinatesList.get(ind).getLat())
-                    .lon(coordinatesList.get(ind).getLon())
-                    .alt(coordinatesList.get(ind).getAlt())
-                    .name(coordinatesList.get(ind).getGpsTracker().getName())
-                    .build();
+            return toDTO(coordinates,gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getDeviceId());
         }
     }
 
     @Override
-    public List<CoordinatesDTO> getCoordinatesDeviceByDate(Date date, String deviceId){
+    public CoordinateDTO getCoordinateByOrderCardAndBetweenDates(String orderCard, Date begin, Date end){
 
-        List<Coordinates>coordinatesList=coordinatesRepository.findCoordinatesByGpsTracker_DeviceIdAndCreationDate(deviceId,date);
+        List<Coordinate>coordinateList=coordinatesRepository.findCoordinatesByOrderCardAndCreationDateBetween(orderCard,begin,end);
 
-        List<CoordinatesDTO>coordinatesDTOS=new ArrayList<>();
-
-        for(Coordinates coordinates:coordinatesList){
-
-            coordinatesDTOS.add(CoordinatesDTO.builder()
-                    .lat(coordinates.getLat())
-                    .lon(coordinates.getLon())
-                    .alt(coordinates.getAlt())
-                    .name(coordinates.getGpsTracker().getName())
-                    .build());
-        }
-
-        return coordinatesDTOS;
-    }
-
-    @Override
-    public CoordinatesDTO getCoordinateByNearestDate(Date date, String deviceId){
-
-        List<Coordinates>coordinatesList=coordinatesRepository.findCoordinatesByGpsTracker_DeviceId(deviceId);
-
-        if(!coordinatesList.isEmpty()){
-
-            long help,min=Math.abs(date.getTime()-coordinatesList.get(0).getCreationDateTime().getTime());
-            int ind=0;
-
-            for (int i=1;i<coordinatesList.size();i++){
-
-                help=Math.abs(date.getTime()-coordinatesList.get(i).getCreationDateTime().getTime());
-                if(help<min){
-
-                    min=help;
-                    ind=i;
-                }
-            }
-
-            CoordinatesDTO coordinatesDTO=CoordinatesDTO.builder()
-                    .lat(coordinatesList.get(ind).getLat())
-                    .lon(coordinatesList.get(ind).getLon())
-                    .alt(coordinatesList.get(ind).getAlt())
-                    .name(coordinatesList.get(ind).getGpsTracker().getName())
-                    .date(coordinatesList.get(ind).getCreationDate())
-                    .time(coordinatesList.get(ind).getCreationTime())
-                    .build();
-
-            return coordinatesDTO;
-        }else{
+        if(coordinateList.isEmpty()){
 
             return null;
+        }else{
+
+            return toDTO(coordinateList,gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getDeviceId());
+        }
+    }
+
+    private CoordinateDTO toDTO(List<Coordinate>coordinatesList,String deviceId){
+
+        List<List<Double>> temporal = new ArrayList<>();
+        double passedWay = 0.0;
+
+        for (Coordinate coordinates : coordinatesList) {
+
+            temporal.add(new ArrayList<Double>(
+                    Arrays.asList(coordinates.getLat(),coordinates.getLon())
+
+            ));
         }
 
+        passedWay = CalculatePassedWayByGpsCoordinates(coordinatesList.get(coordinatesList.size() - 1).getLon(),
+                coordinatesList.get(coordinatesList.size() - 1).getLat(),
+                coordinatesList.get(0).getLon(),
+                coordinatesList.get(0).getLat()
+        );
+        List<Pair<String, Long>> duration = new ArrayList<>();
+
+        long differenceInTime = Math.abs(coordinatesList.get(0).getCreationDateTime().getTime() - coordinatesList.get(coordinatesList.size() - 1).getCreationDateTime().getTime());
+        long differenceInSeconds = (differenceInTime / 1000) % 60;
+        long differenceInMinutes = (differenceInTime / (1000 * 60)) % 60;
+        long differenceInHours = (differenceInTime / (1000 * 60 * 60)) % 24;
+        long differenceInDays = (differenceInTime / (1000 * 60 * 60 * 24)) % 365;
+        long differenceInYears = (differenceInTime / (10001 * 60 * 60 * 24 * 365));
+
+        duration.add(new Pair<>("years", differenceInYears));
+        duration.add(new Pair<>("days", differenceInDays));
+        duration.add(new Pair<>("hours", differenceInHours));
+        duration.add(new Pair<>("minutes", differenceInMinutes));
+        duration.add(new Pair<>("seconds", differenceInSeconds));
+
+
+        return CoordinateDTO.builder()
+                .coordinates(temporal)
+                .duration(duration)
+                .passedWay(passedWay)
+                .id(gpsTrackerService.getGpsTrackerByDeviceId(deviceId).getId())
+                .build();
+
+    }
+
+    @Override
+    public CoordinateDTO getCoordinatesDeviceByOrderCardAndDate(String orderCard, Date date){
+
+        List<Coordinate>coordinatesList=coordinatesRepository.findCoordinatesByOrderCardAndCreationDate(orderCard,date);
+        List<List<Double>>temporal = new ArrayList<>();
+
+        for(Coordinate coordinates:coordinatesList){
+
+            temporal.add(new ArrayList<>(
+                    Arrays.asList(coordinates.getLon(),coordinates.getLat(),coordinates.getAlt())
+            ));
+        }
+        CoordinateDTO coordinatesDTO= CoordinateDTO.builder()
+                .coordinates(temporal)
+                .id(gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getId())
+                .build();
+
+        return coordinatesDTO;
+    }
+
+    private double DoubleToRadian(double number){
+
+        return number*Math.PI/180.0;
+    }
+
+    private double CalculatePassedWayByGpsCoordinates(double lon1, double lat1, double lon2, double lat2){
+
+        double radLat1 = DoubleToRadian(lat1);
+        double radLat2 = DoubleToRadian(lat2);
+        double a = radLat1 - radLat2;
+        double b = DoubleToRadian(lon1) - DoubleToRadian(lon2);
+        double s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a/2),2)+Math.cos(radLat1)*Math.cos(radLat2)*Math.pow(Math.sin(b/2),2)));
+        s = s * earthRadius;
+
+        return s;
     }
 
 }

@@ -23,3 +23,7 @@ CREATE TABLE coordinates(
         REFERENCES gpstrackers("id")
             ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+ALTER TABLE gpstrackers ADD COLUMN "order_card" CHARACTER VARYING (100) UNIQUE ;
+
+ALTER TABLE coordinates ADD COLUMN "order_card" CHARACTER VARYING (100) NOT NULL;

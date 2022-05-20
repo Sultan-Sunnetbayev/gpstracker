@@ -42,6 +42,7 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
                 .name(gpsTracker.getName())
                 .simcardNumber(gpsTracker.getSimcardNumber())
                 .deviceId(gpsTracker.getDeviceId())
+                .orderCard(gpsTracker.getOrderCard())
                 .build();
     }
 
@@ -141,7 +142,7 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
 
         if(gpsTracker!=null){
 
-            GpsTracker temporal=gpsTrackerRepository.findGpsTrackerByDeviceId(gpsTracker.getDeviceId());
+            GpsTracker temporal=gpsTrackerRepository.findGpsTrackerByDeviceId(gpsTrackerDTO.getDeviceId());
 
             if(temporal!=null) {
                 if (temporal.getId() != gpsTracker.getId()) {
@@ -163,11 +164,13 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
             gpsTracker.setSimcardNumber(gpsTrackerDTO.getSimcardNumber());
             gpsTracker.setLogin(gpsTrackerDTO.getLogin());
             gpsTracker.setPassword(gpsTrackerDTO.getPassword());
-            responseTransfer=new ResponseTransfer("gpstracker successfull edited",true);
+            gpsTracker.setOrderCard(gpsTrackerDTO.getOrderCard());
+
+            responseTransfer=new ResponseTransfer("gpstracker successful edited",true);
 
         }else{
 
-            responseTransfer=new ResponseTransfer("gps tracker don't found",false);
+            responseTransfer=new ResponseTransfer("gps tracker not found",false);
         }
 
         return responseTransfer;
@@ -196,11 +199,12 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
                 .simcardNumber(gpsTrackerDTO.getSimcardNumber())
                 .login(gpsTrackerDTO.getLogin())
                 .password(gpsTrackerDTO.getPassword())
+                .orderCard(gpsTrackerDTO.getOrderCard())
                 .build();
 
         gpsTrackerRepository.save(saveGpsTracker);
 
-        return new ResponseTransfer("gps tracker successfull added",true);
+        return new ResponseTransfer("gps tracker successful added",true);
     }
 
 
@@ -255,4 +259,75 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
         }
     }
 
+    @Override
+    public List<GpsTracker> getOccupiedGpsTrackers(){
+
+        return gpsTrackerRepository.getGpsTrackersByOrderCardNotNull();
+    }
+
+    @Override
+    public List<GpsTrackerDTO> getOccupiedGpsTrackerDTOS(){
+
+        return gpsTrackerRepository.getGpsTrackersByOrderCardNotNull().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GpsTrackerDTO> getLooseGpsTrackerDTOS(){
+
+        return gpsTrackerRepository.getGpsTrackersByOrderCardNull().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public GpsTrackerDTO getGpsTrackerDTOByOrderCard(String orderCard){
+
+        GpsTracker gpsTracker=gpsTrackerRepository.findGpsTrackerByOrderCard(orderCard);
+
+        if(gpsTracker==null){
+
+            return null;
+        }else{
+
+            return toDTO(gpsTracker);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ResponseTransfer setOrderGpsTracker(int id, String orderCard){
+
+        if(gpsTrackerRepository.findGpsTrackerByOrderCard(orderCard)!=null){
+
+            return new ResponseTransfer("new order card already added",false);
+        }
+        GpsTracker gpsTracker=gpsTrackerRepository.findGpsTrackerById(id);
+
+        if(gpsTracker==null){
+
+            return new ResponseTransfer("gps tracker not found with by id",false);
+        }else {
+            gpsTracker.setOrderCard(orderCard);
+
+            return new ResponseTransfer("order successful seted gps tracker",true);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ResponseTransfer trushOrderFromGpsTracker(int id){
+
+        GpsTracker gpsTracker=gpsTrackerRepository.findGpsTrackerById(id);
+
+        if(gpsTracker==null){
+
+            return new ResponseTransfer("gps tracker not found with by id",false);
+        }else{
+
+            gpsTracker.setOrderCard(null);
+            return new ResponseTransfer("order successful trushed",true);
+        }
+    }
 }

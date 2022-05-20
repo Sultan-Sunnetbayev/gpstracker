@@ -17,4 +17,6 @@ public class GpsTrackerDTO {
     private String deviceId;
     private String login;
     private String password;
+    private String orderCard;
+
 }

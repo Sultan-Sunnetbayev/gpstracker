@@ -9,6 +9,8 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -19,7 +21,7 @@ import java.util.Date;
 @Builder
 @Entity
 @Table(name = "coordinates")
-public class Coordinates {
+public class Coordinate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +32,10 @@ public class Coordinates {
     private Double lon;
     @Column(name = "alt")
     private Double alt;
+    @Column(name = "order_card")
+    @NotEmpty(message = "order card is empty")
+    @NotBlank(message = "order card is blank")
+    private String orderCard;
     @Column(name = "creation_date")
     @CreationTimestamp
     @Temporal(TemporalType.DATE)
@@ -46,16 +52,4 @@ public class Coordinates {
     @JoinColumn(name = "device_id")
     private GpsTracker gpsTracker;
 
-    @Override
-    public String toString() {
-        return "Coordinates{" +
-                "id=" + id +
-                ", lat=" + lat +
-                ", lon=" + lon +
-                ", alt=" + alt +
-                ", creationDate=" + creationDate +
-                ", creationTime=" + creationTime +
-                ", creationDateTime=" + creationDateTime +
-                '}';
-    }
 }
