@@ -324,7 +324,10 @@ public class GpsTrackerServiceImpl implements GpsTrackerService{
         if(gpsTracker==null){
 
             return new ResponseTransfer("gps tracker not found with by id",false);
-        }else{
+        }else if(gpsTracker.getOrderCard()==null){
+
+            return new ResponseTransfer("gps tracker don't order card",false);
+        } else{
 
             gpsTracker.setOrderCard(null);
             return new ResponseTransfer("order successful trushed",true);

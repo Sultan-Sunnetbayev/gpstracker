@@ -26,7 +26,7 @@ public class CoordinateController {
         this.gpsTrackerService = gpsTrackerService;
     }
 
-    @GetMapping(path = "/orderCard/gpstracker",
+    @PostMapping(path = "/orderCard/gpstracker",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
     public @ResponseBody ResponseEntity getCoordinateByDeviceId(@RequestParam(value = "orderCard",required = true)String orderCard,
@@ -56,15 +56,14 @@ public class CoordinateController {
 
             if (coordinateDTO == null) {
 
-                temporal.put("message", "gps tracker don't send coordinate");
-                temporal.put("id", gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getId());
-                temporal.put("status", false);
-                response.add(temporal);
+//                response.add(temporal);
+//                temporal.put("message", "gps tracker don't send coordinate");
+//                temporal.put("id", gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard).getId());
+//                temporal.put("status", false);
+                response.add(coordinateDTO);
             } else {
 
-                temporal.put("status", true);
                 response.add(coordinateDTO);
-                response.add(temporal);
             }
         }
 
@@ -88,12 +87,7 @@ public class CoordinateController {
 
                 coordinateDTO=coordinatesService.getCoordinateByOrderCard(gpsTrackerDTO.getOrderCard());
 
-                if(coordinateDTO==null){
-                    temporal.put("message","gps tracker don't send coordinate");
-                    temporal.put("id",gpsTrackerDTO.getId());
-                    temporal.put("status",false);
-                    response.add(temporal);
-                }else{
+                if(coordinateDTO!=null){
                     temporal.put("status",true);
                     response.add(coordinateDTO);
                 }
@@ -101,12 +95,12 @@ public class CoordinateController {
 
                 coordinateDTO=coordinatesService.getCoordinateByOrderCardAndBetweenDates(gpsTrackerDTO.getOrderCard(),begin,end);
                 if(coordinateDTO==null){
-                    temporal.put("message","gps tracker don't send coordinate between dates");
-                    temporal.put("id",gpsTrackerDTO.getId());
-                    temporal.put("status",false);
+//                    temporal.put("message","gps tracker don't send coordinate between dates");
+//                    temporal.put("id",gpsTrackerDTO.getId());
+//                    temporal.put("status",false);
                     response.add(temporal);
                 }else{
-                    temporal.put("status",true);
+//                    temporal.put("status",true);
                     response.add(coordinateDTO);
                 }
             }

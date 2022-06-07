@@ -2,6 +2,7 @@ package tm.salam.gpstracker.service;
 
 import javafx.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tm.salam.gpstracker.dao.CoordinateRepository;
@@ -39,31 +40,37 @@ public class CoordinatesServiceImpl implements CoordinatesService{
         return result;
     }
     @Scheduled(cron = "0 0/5 * * * *")
+    @Async
     @Override
     public void SendAndReadSms() throws InterruptedException {
 
+        for(String string:gsmService.getSystemPorts()){
+            System.out.println(string);
+        }
+        System.out.println(gsmService.getSystemPorts()[1]);
         gsmService.initialize(gsmService.getSystemPorts()[1]);
 
         ArrayList<String[]> sms = gsmService.readSms();
+
+        System.out.println(sms.size());
         boolean chk = false;
-        int ind=0;
+        int ind;
         String[] hlp = new String[3];
 
         System.out.println("starting");
         for (int i = 0; i < sms.size(); i++) {
 
             String[] temporal = sms.get(i);
+            ind=-1;
             for (int j = 0; j < temporal.length; j++) {
 
                 temporal[j] = temporal[j].toLowerCase();
                 System.out.println(temporal[j]);
 
-                if (!chk && temporal[j].contains("+993")) {
-                    chk = true;
+                if (temporal[j].contains("+993")) {
                     ind=j;
                     continue;
-                }else {
-                    if (chk) {
+                }else if(ind>-1){
 
                         GpsTracker gpsTracker=gpsTrackerService.getGpsTrackerBySimcardNumber(temporal[ind]);
                         if (gpsTracker!=null && temporal[j].contains("lat") && temporal[j].contains("long")) {
@@ -86,24 +93,30 @@ public class CoordinatesServiceImpl implements CoordinatesService{
                             }
 
                         }
-                    }
                 }
             }
         }
 
         List<GpsTracker>gpsTrackers=gpsTrackerService.getOccupiedGpsTrackers();
 
-        for (GpsTracker gpsTracker:gpsTrackers){
+        if(!gpsTrackers.isEmpty()) {
+            for (GpsTracker gpsTracker : gpsTrackers) {
 
-            System.out.println(gpsTracker.getSimcardNumber());
-            gsmService.sendSms(gpsTracker.getSimcardNumber(),gpsTracker.getLogin()+" "+gpsTracker.getPassword()+" getgps");
-            Thread.sleep(2000);
+                System.out.println(gpsTracker.getSimcardNumber());
+                gsmService.sendSms(gpsTracker.getSimcardNumber(), gpsTracker.getLogin() + " " + gpsTracker.getPassword() + " getgps");
+                Thread.sleep(1000);
 
+            }
         }
+        Thread.sleep(1000);
+        gsmService.closePort();
 
+        gsmService.initialize(gsmService.getSystemPorts()[1]);
+        Thread.sleep(1000);
         gsmService.deleteAllSms(gsmService.getSmsStorage()[0]);
+        Thread.sleep(1000);
         gsmService.deleteAllSms(gsmService.getSmsStorage()[1]);
-
+        Thread.sleep(1000);
         gsmService.closePort();
         System.out.println("ending");
 

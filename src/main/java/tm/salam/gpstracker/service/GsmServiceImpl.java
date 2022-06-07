@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
-@Component
+@Service
 public class GsmServiceImpl implements GsmService{
 
     private SerialPort serialPort;
