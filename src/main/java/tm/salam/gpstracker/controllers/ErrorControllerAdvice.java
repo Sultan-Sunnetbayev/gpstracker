@@ -3,6 +3,8 @@ package tm.salam.gpstracker.controllers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
+import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -92,5 +94,17 @@ public class ErrorControllerAdvice extends ResponseEntityExceptionHandler {
 
 
         return new ResponseEntity<Object>(message, new HttpHeaders(), message.getStatus());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<Object>invalidTokenException(InvalidTokenException exception,WebRequest request){
+
+        ApiError error=new ApiError(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                exception.getLocalizedMessage()
+        );
+
+        return new ResponseEntity<Object>(error,new HttpHeaders(),error.getStatus());
     }
 }

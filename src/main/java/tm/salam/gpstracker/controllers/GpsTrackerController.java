@@ -1,10 +1,14 @@
 package tm.salam.gpstracker.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParser;
+import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.jwt.JwtHelper;
 import org.springframework.web.bind.annotation.*;
 import tm.salam.gpstracker.dto.GpsTrackerDTO;
+import tm.salam.gpstracker.helper.CheckToken;
 import tm.salam.gpstracker.helper.ResponseTransfer;
 import tm.salam.gpstracker.models.GpsTracker;
 import tm.salam.gpstracker.service.GpsTrackerService;
@@ -24,7 +28,20 @@ public class GpsTrackerController {
     }
 
     @GetMapping(produces = "application/json")
-    public ResponseEntity getAllGpsTrackers(){
+    public ResponseEntity getAllGpsTrackers(@RequestHeader("Authorization")String token) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+
+            return ResponseEntity.badRequest().body("wrong token");
+        }
 
         Map<Object,Object> response=new HashMap<>();
 
@@ -35,7 +52,22 @@ public class GpsTrackerController {
     }
 
     @GetMapping(path = "/id",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
-    public ResponseEntity getGpsTrackerById(@RequestParam("id") int id){
+    public ResponseEntity getGpsTrackerById(@RequestParam("id") int id,
+                                            @RequestHeader("Authorization")String token) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+
+            return ResponseEntity.badRequest().body("wrong token");
+        }
+
 
         GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOById(id);
         Map<Object,Object>response=new HashMap<>();
@@ -53,38 +85,111 @@ public class GpsTrackerController {
     }
 
     @PostMapping(path = "/add",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
-    public ResponseTransfer addGpsTracker(@ModelAttribute GpsTrackerDTO gpsTrackerDTO){
+    public ResponseEntity addGpsTracker(@ModelAttribute GpsTrackerDTO gpsTrackerDTO,
+                                          @RequestHeader("Authorization")String token) throws Exception {
 
-        if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,4),"+993")){
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
 
-            return new ResponseTransfer("simcard number is invalid",false);
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+            return ResponseEntity.badRequest().body("wrong token");
         }
 
-        return gpsTrackerService.addGpsTracker(gpsTrackerDTO);
+        Map<String,Object>response=new HashMap<>();
+        if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,4),"+993")){
+
+            response.put("message","simcard number is invalid");
+            response.put("status",false);
+
+            return ResponseEntity.ok(response);
+        }
+
+        ResponseTransfer responseTransfer=gpsTrackerService.addGpsTracker(gpsTrackerDTO);
+        response.put("message",responseTransfer.getMessage());
+        response.put("status",responseTransfer.getStatus());
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping(path="/id/edit",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
-    public ResponseTransfer editGpsTrackerById(@RequestParam("id") int id,
-                                           @ModelAttribute GpsTrackerDTO gpsTrackerDTO){
+    public ResponseEntity editGpsTrackerById(@RequestParam("id") int id,
+                                           @ModelAttribute GpsTrackerDTO gpsTrackerDTO,
+                                               @RequestHeader("Authorization")String token) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+
+            return ResponseEntity.badRequest().body("wrong token");
+        }
+        Map<String,Object>response=new HashMap<>();
 
         if(!Objects.equals(gpsTrackerDTO.getSimcardNumber().substring(0,4),"+993")){
 
-            return new ResponseTransfer("simcard number is invalid",false);
-        }
+            response.put("message","simcard number is invalid");
+            response.put("status",false);
 
-        return gpsTrackerService.editGpsTrackerById(id,gpsTrackerDTO);
+            return ResponseEntity.ok(response);
+        }
+        ResponseTransfer responseTransfer=gpsTrackerService.editGpsTrackerById(id,gpsTrackerDTO);
+        response.put("message",responseTransfer.getMessage());
+        response.put("status",responseTransfer.getStatus());
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping(path = "/remove",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
-    public ResponseTransfer deleteGpsTrackerById(@RequestParam("id") int id){
+    public ResponseEntity deleteGpsTrackerById(@RequestParam("id") int id,
+                                                 @RequestHeader("Authorization")String token) throws Exception {
 
-        return gpsTrackerService.deleteGpsTrackerById(id);
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+
+            return ResponseEntity.badRequest().body("wrong token");
+        }
+        ResponseTransfer responseTransfer=gpsTrackerService.deleteGpsTrackerById(id);
+        Map<Object,Object>response=new HashMap<>();
+        response.put("message",responseTransfer.getMessage());
+        response.put("status",responseTransfer.getStatus());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping(path = "/occupied",produces = "application/json")
-    public ResponseEntity getOccupiedGpsTrackers(){
+    public ResponseEntity getOccupiedGpsTrackers(@RequestHeader("Authorization")String token) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+
+            return ResponseEntity.badRequest().body("wrong token");
+        }
 
         List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getOccupiedGpsTrackerDTOS();
         List<Object>response=new ArrayList<>();
@@ -105,7 +210,19 @@ public class GpsTrackerController {
     }
 
     @GetMapping(path = "/loose",produces = "application/json")
-    public ResponseEntity getLooseGpsTrackers(){
+    public ResponseEntity getLooseGpsTrackers(@RequestHeader("Authorization")String token) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+            return ResponseEntity.badRequest().body("wrong token");
+        }
 
         List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getLooseGpsTrackerDTOS();
         List<Object>response=new ArrayList<>();
@@ -127,7 +244,20 @@ public class GpsTrackerController {
     }
 
     @GetMapping(path = "/orderCard",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
-    public ResponseEntity getGpsTrackerByOrderCard(@RequestParam("orderCard")String orderCard){
+    public ResponseEntity getGpsTrackerByOrderCard(@RequestParam("orderCard")String orderCard,
+                                                   @RequestHeader("Authorization")String token) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+            return ResponseEntity.badRequest().body("wrong token");
+        }
 
         GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard);
         Map<Object,Object>response=new HashMap<>();
@@ -146,14 +276,50 @@ public class GpsTrackerController {
     }
 
     @PutMapping(path = "/set/order",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
-    public ResponseTransfer setOrderToGpsTracker(@RequestParam("id")int id,@RequestParam("orderCard")String orderCard){
+    public ResponseEntity setOrderToGpsTracker(@RequestParam("id")int id,@RequestParam("orderCard")String orderCard,
+                                                 @RequestHeader("Authorization")String token) throws Exception {
 
-        return gpsTrackerService.setOrderGpsTracker(id,orderCard);
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+            return ResponseEntity.badRequest().body("wrong token");
+        }
+
+        Map<String,Object>response=new HashMap<>();
+        ResponseTransfer responseTransfer=gpsTrackerService.setOrderGpsTracker(id,orderCard);
+        response.put("message",responseTransfer.getMessage());
+        response.put("status",responseTransfer.getStatus());
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping(path = "/trush/order",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},produces = "application/json")
-    public ResponseTransfer trushOrderFromGpsTracker(@RequestParam("id")int id){
+    public ResponseEntity trushOrderFromGpsTracker(@RequestParam("id")int id,
+                                                     @RequestHeader("Authorization")String token) throws Exception {
 
-        return gpsTrackerService.trushOrderFromGpsTracker(id);
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                return ResponseEntity.badRequest().body("wrong token");
+            }
+        }else{
+
+            return ResponseEntity.badRequest().body("wrong token");
+        }
+        ResponseTransfer responseTransfer=gpsTrackerService.trushOrderFromGpsTracker(id);
+        Map<String,Object>response=new HashMap<>();
+        response.put("message",responseTransfer.getMessage());
+        response.put("status",responseTransfer.getStatus());
+
+        return ResponseEntity.ok(response);
     }
 }

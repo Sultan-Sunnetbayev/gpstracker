@@ -1,12 +1,16 @@
 package tm.salam.gpstracker.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParser;
+import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.jwt.JwtHelper;
 import tm.salam.gpstracker.dto.CoordinateDTO;
 import tm.salam.gpstracker.dto.GpsTrackerDTO;
+import tm.salam.gpstracker.helper.CheckToken;
 import tm.salam.gpstracker.service.CoordinatesService;
 import tm.salam.gpstracker.service.GpsTrackerService;
 
@@ -30,10 +34,24 @@ public class CoordinateController {
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
             produces = "application/json")
     public @ResponseBody ResponseEntity getCoordinateByDeviceId(@RequestParam(value = "orderCard",required = true)String orderCard,
+                                                  @RequestHeader("Authorization")String token,
                                                   @RequestParam(value = "begin",required = false)
                                                       @DateTimeFormat(pattern = "yyyy-MM-dd") Date begin,
                                                   @RequestParam(value = "end",required = false)
-                                                      @DateTimeFormat(pattern = "yyyy-MM-dd") Date end){
+                                                      @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) throws Exception {
+
+            JsonParser jsonParser = JsonParserFactory.getJsonParser();
+            Map<String, ?> tokenData = jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+            if (tokenData.containsKey("message") && tokenData.containsKey("date")) {
+                if (!CheckToken.Check(String.valueOf(tokenData.get("message")), String.valueOf(tokenData.get("date")))) {
+
+                    throw new Exception("wrong token");
+                }
+            } else {
+                throw new Exception("wrong token");
+            }
+
         List<Object>response=new ArrayList<>();
         Map<Object,Object>temporal=new HashMap<>();
         CoordinateDTO coordinateDTO=null;
@@ -73,8 +91,21 @@ public class CoordinateController {
     @PostMapping(path = "/all/gpstrackers",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
     public @ResponseBody ResponseEntity getCoordinateAllGpsTracker(@RequestParam(value = "begin",required = false)
                                                                                @DateTimeFormat(pattern = "yyyy-MM-dd") Date begin,
-                                                     @RequestParam(value = "end",required = false)
-                                                                               @DateTimeFormat(pattern = "yyyy-MM-dd") Date end){
+                                                                   @RequestHeader("Authorization")String token,
+                                                                   @RequestParam(value = "end",required = false)
+                                                                               @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                throw new Exception("wrong token");
+            }
+        }else{
+            throw new Exception("wrong token");
+        }
 
         List<Object>response=new ArrayList<>();
         List<GpsTrackerDTO>gpsTrackerDTOS=gpsTrackerService.getOccupiedGpsTrackerDTOS();
@@ -113,7 +144,20 @@ public class CoordinateController {
                 consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
                 produces = "application/json")
     public ResponseEntity getCoordinateDeviceByDate(@RequestParam(value = "orderCard",required = true)String orderCard,
-                                                    @RequestParam("date")@DateTimeFormat(pattern = "yyyy-MM-dd") Date date){
+                                                    @RequestHeader("Authorization")String token,
+                                                    @RequestParam("date")@DateTimeFormat(pattern = "yyyy-MM-dd") Date date) throws Exception {
+
+        JsonParser jsonParser= JsonParserFactory.getJsonParser();
+        Map<String,?>tokenData=jsonParser.parseMap(JwtHelper.decode(token).getClaims());
+
+        if(tokenData.containsKey("message") && tokenData.containsKey("date")){
+            if(!CheckToken.Check(String.valueOf(tokenData.get("message")),String.valueOf(tokenData.get("date")))){
+
+                throw new Exception("wrong token");
+            }
+        }else{
+            throw new Exception("wrong token");
+        }
 
         Map<Object,Object>response=new HashMap<>();
         GpsTrackerDTO gpsTrackerDTO=gpsTrackerService.getGpsTrackerDTOByOrderCard(orderCard);
@@ -139,4 +183,5 @@ public class CoordinateController {
 
         return ResponseEntity.ok(response);
     }
+
 }
