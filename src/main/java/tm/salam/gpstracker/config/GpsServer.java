@@ -14,9 +14,13 @@ import org.springframework.integration.ip.tcp.serializer.TcpCodecs;
 import org.springframework.integration.transformer.ObjectToStringTransformer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @Configuration
+@RestController
+@RequestMapping("/")
 public class GpsServer {
 
     @Bean
